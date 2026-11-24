@@ -1,0 +1,46 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 450] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 479 >>
+stream
+0.1 0.1 0.1 rg
+50 50 500 8 re f
+50 392 500 8 re f
+50 50 8 350 re f
+542 50 8 350 re f
+300 50 8 120 re f
+300 230 8 170 re f
+58 220 100 8 re f
+200 220 100 8 re f
+1 1 1 rg 380 392 90 8 re f
+0 0 0 RG 0.6 w 380 394.5 m 470 394.5 l S 380 397.5 m 470 397.5 l S
+0 0 0 RG 0.8 w 308 170 m 368 170 l S 368 170 m 368 203 341 230 308 230 c S
+0 0 0 RG 0.8 w 158 228 m 158 270 l S 158 270 m 181 270 200 251 200 228 c S
+BT /F1 16 Tf 120 300 Td (SALON) Tj ET
+BT /F1 16 Tf 400 300 Td (COCINA) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000771 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+841
+%%EOF

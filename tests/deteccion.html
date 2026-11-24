@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pruebas de detección de planos</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 24px; color: #1f2430; }
+      table { border-collapse: collapse; margin-bottom: 8px; }
+      td, th { border: 1px solid #ddd; padding: 4px 10px; text-align: left; }
+      .ok { color: #15803d; font-weight: 600; }
+      .fail { color: #dc2626; font-weight: 600; }
+      canvas { max-width: 560px; border: 1px solid #ddd; margin: 4px 0 28px; display: block; }
+      #summary { font-size: 16px; font-weight: 600; margin: 12px 0 24px; }
+    </style>
+  </head>
+  <body>
+    <h1>Pruebas de detección de planos</h1>
+    <p>
+      Ejecuta la detección automática (la misma que usa el diálogo «Importar plano») sobre planos sintéticos y la
+      compara con lo esperado. Ábrela con <code>npm run dev</code> en <code>/tests/deteccion.html</code>.
+    </p>
+    <div id="summary">Ejecutando…</div>
+    <div id="out"></div>
+    <script type="module">
+      import { FIXTURES } from './fixtures.js';
+      import { prepare, detectSegments, buildModel, deskew, autoSettings, estimateScale } from '../src/planDetect.js';
+
+      const out = document.getElementById('out');
+      const results = [];
+      for (const make of FIXTURES) {
+        const fx = await make();
+        fx.expected = { ...fx.expected }; // copia: algunos planos comparten el objeto base
+        const t0 = performance.now();
+        const ds = deskew(fx.canvas);
+        const canvas = ds.canvas;
+        const prep = prepare(canvas);
+        const auto = autoSettings(prep);
+        const s1 = detectSegments(prep, auto);
+        const trueScale = 1 / (fx.scale || 1); // cm por px reales del plano de prueba
+        const m = buildModel(s1, { cmPerPx: trueScale, openings: true, rooms: true, hollow: auto.hollow });
+        const ms = Math.round(performance.now() - t0);
+        const est = estimateScale(prep, s1, m).v;
+        const got = {
+          walls: m.walls.length,
+          doors: m.openings.filter((o) => o.kind === 'door' || o.kind === 'sliding').length,
+          windows: m.openings.filter((o) => o.kind === 'window').length,
+          rooms: m.rooms.length,
+        };
+        if (fx.expectedSliding !== undefined) {
+          fx.expected.sliding = fx.expectedSliding;
+          got.sliding = m.openings.filter((o) => o.kind === 'sliding').length;
+        }
+        const pass = Object.keys(fx.expected).every((k) => got[k] === fx.expected[k]);
+        const rows = Object.keys(fx.expected)
+          .map((k) => `<tr><td>${k}</td><td>${fx.expected[k]}</td><td>${got[k]}</td><td class="${got[k] === fx.expected[k] ? 'ok' : 'fail'}">${got[k] === fx.expected[k] ? 'OK' : 'FALLA'}</td></tr>`)
+          .join('');
+        const info = [
+          `${canvas.width} × ${canvas.height} px`,
+          `${ms} ms`,
+          ds.angle ? `enderezado ${ds.angle.toFixed(2)}°` : 'sin girar',
+          auto.hollow ? `muros con contorno (separación ${auto.gapSize} px)` : 'muros rellenos',
+          prep.inverted ? 'colores invertidos' : '',
+          `escala estimada ${(est / trueScale * 100).toFixed(0)} % de la real`,
+        ].filter(Boolean);
+        out.insertAdjacentHTML('beforeend', `<h2 class="${pass ? 'ok' : 'fail'}">${pass ? '✔' : '✘'} ${fx.name}</h2><p>${info.join(' · ')}</p><table><tr><th></th><th>Esperado</th><th>Detectado</th><th></th></tr>${rows}</table>`);
+        // Resultado dibujado sobre el plano
+        const vis = document.createElement('canvas');
+        vis.width = canvas.width;
+        vis.height = canvas.height;
+        const g = vis.getContext('2d');
+        g.drawImage(canvas, 0, 0);
+        g.fillStyle = 'rgba(255,255,255,0.35)';
+        g.fillRect(0, 0, vis.width, vis.height);
+        m.rooms.forEach((r, i) => {
+          g.beginPath();
+          r.points.forEach((q, k) => (k ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y)));
+          g.closePath();
+          g.fillStyle = `hsla(${i * 67}, 75%, 55%, 0.25)`;
+          g.fill();
+        });
+        g.fillStyle = 'rgba(220,38,38,0.7)';
+        for (const w of m.walls) {
+          if (w.o === 'd') {
+            g.strokeStyle = 'rgba(220,38,38,0.7)';
+            g.lineWidth = w.t;
+            g.beginPath();
+            g.moveTo(w.x1, w.y1);
+            g.lineTo(w.x2, w.y2);
+            g.stroke();
+          } else if (w.o === 'h') g.fillRect(w.a, w.c - w.t / 2, w.b - w.a, w.t);
+          else g.fillRect(w.c - w.t / 2, w.a, w.t, w.b - w.a);
+        }
+        for (const o of m.openings) {
+          g.fillStyle = o.kind === 'window' ? 'rgba(14,165,233,0.9)' : o.kind === 'sliding' ? 'rgba(217,70,239,0.9)' : 'rgba(22,163,74,0.9)';
+          const t = o.t * 1.3;
+          o.o === 'h' ? g.fillRect(o.a, o.c - t / 2, o.b - o.a, t) : g.fillRect(o.c - t / 2, o.a, t, o.b - o.a);
+        }
+        out.append(vis);
+        results.push({ name: fx.name, pass, expected: fx.expected, got, ms, auto: auto.hollow, est: est / trueScale });
+      }
+      const ok = results.filter((r) => r.pass).length;
+      const summary = document.getElementById('summary');
+      summary.textContent = `${ok} de ${results.length} planos detectados correctamente`;
+      summary.className = ok === results.length ? 'ok' : 'fail';
+      window.__results = results;
+    </script>
+  </body>
+</html>

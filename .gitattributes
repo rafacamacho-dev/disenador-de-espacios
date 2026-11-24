@@ -1,0 +1,10 @@
+# Código y textos con saltos de línea LF en el repositorio
+* text=auto eol=lf
+
+# Archivos binarios: nunca convertir
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary

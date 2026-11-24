@@ -1,0 +1,19 @@
+{
+  "name": "disenador-de-espacios",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Diseñador de habitaciones, casas, baños y espacios en 2D y 3D",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^6.5.438",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "vite": "^8.3.8"
+  }
+}
